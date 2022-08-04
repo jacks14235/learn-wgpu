@@ -2,6 +2,8 @@ mod texture;
 
 use cgmath::prelude::*;
 use std::iter;
+// use std::time::{SystemTime, Duration};
+// use rand::prelude::*;
 
 use wgpu::util::DeviceExt;
 use winit::{
@@ -41,68 +43,120 @@ impl Vertex {
     }
 }
 
+const STAR_SPEED: f32 = 1.0;
+struct Star {
+    position: [f32; 3],
+}
+
+impl Star {
+    pub fn new() -> Self {
+        let x = 0.0; // rand::random::<f32>();
+        let y = 0.0; // rand::random::<f32>();
+        let z = 0.0; // rand::random::<f32>();
+        let position = [x, y, z];
+        Self { position }
+    }
+
+    pub fn update(&mut self) {
+        //, delta: Duration) {
+        self.position[2] -= STAR_SPEED / 60.0;
+    }
+
+    fn desc<'a>() -> wgpu::VertexBufferLayout<'a> {
+        wgpu::VertexBufferLayout {
+            array_stride: std::mem::size_of::<Vertex>() as wgpu::BufferAddress,
+            step_mode: wgpu::VertexStepMode::Vertex,
+            attributes: &[wgpu::VertexAttribute {
+                offset: 0,
+                shader_location: 2,
+                format: wgpu::VertexFormat::Float32x3,
+            }],
+        }
+    }
+}
+
+// const VERTICES: &[Vertex] = &[
+//     Vertex {
+//         // 0
+//         position: [0.0, 0.9, 0.0],
+//         tex_coords: [0.25, 0.066],
+//     },
+//     Vertex {
+//         // 1
+//         position: [-0.15, 0.27, 0.0],
+//         tex_coords: [0.5, 0.0],
+//     },
+//     Vertex {
+//         // 2
+//         position: [-0.8, 0.5, 0.0],
+//         tex_coords: [1.0, 0.5],
+//     },
+//     Vertex {
+//         // 3
+//         position: [-0.27, -0.15, 0.0],
+//         tex_coords: [0.933, 0.75],
+//     },
+//     Vertex {
+//         // 4
+//         position: [-0.4, -0.8, 0.0],
+//         tex_coords: [0.75, 0.933],
+//     },
+//     Vertex {
+//         // 5
+//         position: [0.0, -0.35, 0.0],
+//         tex_coords: [0.5, 1.0],
+//     },
+//     Vertex {
+//         // 6
+//         position: [0.4, -0.8, 0.0],
+//         tex_coords: [0.25, 0.933],
+//     },
+//     Vertex {
+//         // 7
+//         position: [0.27, -0.15, 0.0],
+//         tex_coords: [0.066, 0.75],
+//     },
+//     Vertex {
+//         // 8
+//         position: [0.8, 0.5, 0.0],
+//         tex_coords: [0.0, 0.5],
+//     },
+//     Vertex {
+//         // 9
+//         position: [0.15, 0.27, 0.0],
+//         tex_coords: [0.066, 0.25],
+//     },
+//     Vertex {
+//         // 10
+//         position: [0.0, 0.0, 0.0],
+//         tex_coords: [0.5, 0.5],
+//     },
+// ];
+
 const VERTICES: &[Vertex] = &[
     Vertex {
-        // 0
-        position: [0.0, 0.9, 0.0],
-        tex_coords: [0.25, 0.066],
+        position: [0.1, 0.1, 0.0],
+        tex_coords: [1.0, 0.0]
     },
     Vertex {
-        // 1
-        position: [-0.15, 0.27, 0.0],
-        tex_coords: [0.5, 0.0],
+        position: [-0.1, 0.1, 0.0],
+        tex_coords: [1.0, 0.0]
     },
     Vertex {
-        // 2
-        position: [-0.8, 0.5, 0.0],
-        tex_coords: [1.0, 0.5],
+        position: [0.1, -0.1, 0.0],
+        tex_coords: [1.0, 0.0]
     },
     Vertex {
-        // 3
-        position: [-0.27, -0.15, 0.0],
-        tex_coords: [0.933, 0.75],
-    },
-    Vertex {
-        // 4
-        position: [-0.4, -0.8, 0.0],
-        tex_coords: [0.75, 0.933],
-    },
-    Vertex {
-        // 5
-        position: [0.0, -0.35, 0.0],
-        tex_coords: [0.5, 1.0],
-    },
-    Vertex {
-        // 6
-        position: [0.4, -0.8, 0.0],
-        tex_coords: [0.25, 0.933],
-    },
-    Vertex {
-        // 7
-        position: [0.27, -0.15, 0.0],
-        tex_coords: [0.066, 0.75],
-    },
-    Vertex {
-        // 8
-        position: [0.8, 0.5, 0.0],
-        tex_coords: [0.0, 0.5],
-    },
-    Vertex {
-        // 9
-        position: [0.15, 0.27, 0.0],
-        tex_coords: [0.066, 0.25],
-    },
-    Vertex {
-        // 10
-        position: [0.0, 0.0, 0.0],
-        tex_coords: [0.5, 0.5],
+        position: [-0.1, -0.1, 0.0],
+        tex_coords: [1.0, 0.0]
     },
 ];
 
 const INDICES: &[u16] = &[
-    1, 9, 0, 3, 1, 2, 5, 3, 4, 7, 5, 6, 9, 7, 8, 1, 10, 9, 3, 10, 1, 5, 10, 3, 7, 10, 5, 9, 10, 7,
+    0, 1, 2, 1, 3, 2
 ];
 
+#[derive(Clone, Copy)]
 struct Instance {
     position: cgmath::Vector3<f32>,
     rotation: cgmath::Quaternion<f32>,
@@ -114,6 +168,11 @@ impl Instance {
                 * cgmath::Matrix4::from(self.rotation))
             .into(),
         }
+    }
+
+    pub fn update(&mut self) {
+        //, delta: Duration) {
+        self.position.x += 1.0 / 60.0;
     }
 }
 
@@ -308,6 +367,7 @@ struct State {
     device: wgpu::Device,
     queue: wgpu::Queue,
     config: wgpu::SurfaceConfiguration,
+    // system_time: SystemTime,
     size: winit::dpi::PhysicalSize<u32>,
     render_pipeline: wgpu::RenderPipeline,
     vertex_buffer: wgpu::Buffer,
@@ -323,6 +383,7 @@ struct State {
     instances: Vec<Instance>,
     instance_buffer: wgpu::Buffer,
     depth_texture: texture::Texture,
+    stars: Vec<Star>,
 }
 
 impl State {
@@ -453,8 +514,8 @@ impl State {
             label: Some("diffuse_bind_group"),
         });
 
-        let depth_texture = texture::Texture::create_depth_texture(&device, &config, "depth_texture");
-
+        let depth_texture =
+            texture::Texture::create_depth_texture(&device, &config, "depth_texture");
 
         let camera = Camera {
             // position the camera one unit up and 2 units back
@@ -553,7 +614,7 @@ impl State {
                 format: texture::Texture::DEPTH_FORMAT,
                 depth_write_enabled: true,
                 depth_compare: wgpu::CompareFunction::Less, // 1.
-                stencil: wgpu::StencilState::default(), // 2.
+                stencil: wgpu::StencilState::default(),     // 2.
                 bias: wgpu::DepthBiasState::default(),
             }),
             multisample: wgpu::MultisampleState {
@@ -577,12 +638,18 @@ impl State {
             usage: wgpu::BufferUsages::INDEX,
         });
         let num_indices = INDICES.len() as u32;
+        // let system_time = SystemTime::now();
+
+        const NUM_STARS: u32 = 10;
+        let test = Star::new();
+        let stars: Vec<Star> = [0..10].into_iter().map(|_| Star::new()).collect();
 
         Self {
             surface,
             device,
             queue,
             config,
+            // system_time,
             size,
             render_pipeline,
             vertex_buffer,
@@ -597,7 +664,8 @@ impl State {
             camera_controller,
             instances,
             instance_buffer,
-            depth_texture
+            depth_texture,
+            stars,
         }
     }
 
@@ -606,7 +674,8 @@ impl State {
             self.size = new_size;
             self.config.width = new_size.width;
             self.config.height = new_size.height;
-            self.depth_texture = texture::Texture::create_depth_texture(&self.device, &self.config, "depth_texture");
+            self.depth_texture =
+                texture::Texture::create_depth_texture(&self.device, &self.config, "depth_texture");
             self.surface.configure(&self.device, &self.config);
         }
     }
@@ -616,6 +685,30 @@ impl State {
     }
 
     fn update(&mut self) {
+        // match self.system_time.elapsed() {
+        //     Ok(elapsed) => {
+        //         self.update_stars(elapsed);
+        //         self.instances.iter_mut().for_each(|i| i.update(elapsed));
+        //     }
+        //     Err(err) => {
+        //         println!("{}", err);
+        //     }
+        // }
+        self.instances.iter_mut().for_each(|i| i.update());
+        let instance_data = self
+            .instances
+            .iter()
+            .map(Instance::to_raw)
+            .collect::<Vec<_>>();
+        let instance_buffer = self
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("Instance Buffer"),
+                contents: bytemuck::cast_slice(&instance_data),
+                usage: wgpu::BufferUsages::VERTEX,
+            });
+        self.instance_buffer = instance_buffer;
+
         self.camera_controller.update_camera(&mut self.camera);
         self.camera_uniform.update_view_proj(&self.camera);
         self.queue.write_buffer(
@@ -645,9 +738,9 @@ impl State {
                     resolve_target: None,
                     ops: wgpu::Operations {
                         load: wgpu::LoadOp::Clear(wgpu::Color {
-                            r: 0.1,
-                            g: 0.2,
-                            b: 0.3,
+                            r: 0.0,
+                            g: 0.0,
+                            b: 0.0,
                             a: 1.0,
                         }),
                         store: true,
@@ -670,6 +763,7 @@ impl State {
             render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
             render_pass.set_vertex_buffer(1, self.instance_buffer.slice(..));
             render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
+
             render_pass.draw_indexed(0..self.num_indices, 0, 0..self.instances.len() as _);
         }
 
@@ -699,7 +793,7 @@ pub async fn run() {
         // Winit prevents sizing with CSS, so we have to set
         // the size manually when on web.
         use winit::dpi::PhysicalSize;
-        window.set_inner_size(PhysicalSize::new(450, 400));
+        window.set_inner_size(PhysicalSize::new(900, 700));
 
         use winit::platform::web::WindowExtWebSys;
         web_sys::window()
