@@ -1,9 +1,9 @@
 mod texture;
 
 use cgmath::prelude::*;
+use rand::random;
 use std::iter;
 // use std::time::{SystemTime, Duration};
-// use rand::prelude::*;
 
 use wgpu::util::DeviceExt;
 use winit::{
@@ -58,7 +58,6 @@ impl Star {
     }
 
     pub fn update(&mut self) {
-        //, delta: Duration) {
         self.position[2] -= STAR_SPEED / 60.0;
     }
 
@@ -135,26 +134,24 @@ impl Star {
 
 const VERTICES: &[Vertex] = &[
     Vertex {
-        position: [0.1, 0.1, 0.0],
-        tex_coords: [1.0, 0.0]
+        position: [0.01, 0.01, 0.0],
+        tex_coords: [1.0, 0.0],
     },
     Vertex {
-        position: [-0.1, 0.1, 0.0],
-        tex_coords: [1.0, 0.0]
+        position: [-0.01, 0.01, 0.0],
+        tex_coords: [1.0, 0.0],
     },
     Vertex {
-        position: [0.1, -0.1, 0.0],
-        tex_coords: [1.0, 0.0]
+        position: [0.01, -0.01, 0.0],
+        tex_coords: [1.0, 0.0],
     },
     Vertex {
-        position: [-0.1, -0.1, 0.0],
-        tex_coords: [1.0, 0.0]
+        position: [-0.01, -0.01, 0.0],
+        tex_coords: [1.0, 0.0],
     },
 ];
 
-const INDICES: &[u16] = &[
-    0, 1, 2, 1, 3, 2
-];
+const INDICES: &[u16] = &[0, 1, 2, 1, 3, 2];
 
 #[derive(Clone, Copy)]
 struct Instance {
@@ -171,8 +168,13 @@ impl Instance {
     }
 
     pub fn update(&mut self) {
-        //, delta: Duration) {
-        self.position.x += 1.0 / 60.0;
+        if (self.position.z > 0.0) {
+            self.position.x = -5.0 + rand::random::<f32>() * 10.0;
+            self.position.y = -5.0 + rand::random::<f32>() * 10.0;
+            self.position.z = -30.0;
+        } else {
+            self.position.z += 10.0 / 60.0;
+        }
     }
 }
 
@@ -430,34 +432,24 @@ impl State {
         };
 
         // create instances of out objects
-        const NUM_INSTANCES_PER_ROW: u32 = 10;
-        const INSTANCE_DISPLACEMENT: cgmath::Vector3<f32> = cgmath::Vector3::new(
-            NUM_INSTANCES_PER_ROW as f32 * 0.5,
-            0.0,
-            NUM_INSTANCES_PER_ROW as f32 * 0.5,
-        );
-        let instances = (0..NUM_INSTANCES_PER_ROW)
-            .flat_map(|z| {
-                (0..NUM_INSTANCES_PER_ROW).map(move |x| {
-                    let position = cgmath::Vector3 {
-                        x: x as f32,
-                        y: 0.0,
-                        z: z as f32,
-                    } - INSTANCE_DISPLACEMENT;
+        const NUM_INSTANCES: u32 = 500;
+        let instances = (0..NUM_INSTANCES)
+            .map(move |x| {
+                let position = cgmath::Vector3 {
+                    x: -5.0 + rand::random::<f32>() * 10.0,
+                    y: -5.0 + rand::random::<f32>() * 10.0,
+                    z: rand::random::<f32>() * -30.0,
+                };
 
-                    let rotation = if position.is_zero() {
-                        // this is needed so an object at (0, 0, 0) won't get scaled to zero
-                        // as Quaternions can effect scale if they're not created correctly
-                        cgmath::Quaternion::from_axis_angle(
-                            cgmath::Vector3::unit_z(),
-                            cgmath::Deg(0.0),
-                        )
-                    } else {
-                        cgmath::Quaternion::from_axis_angle(position.normalize(), cgmath::Deg(45.0))
-                    };
+                let rotation = if position.is_zero() {
+                    // this is needed so an object at (0, 0, 0) won't get scaled to zero
+                    // as Quaternions can effect scale if they're not created correctly
+                    cgmath::Quaternion::from_axis_angle(cgmath::Vector3::unit_z(), cgmath::Deg(0.0))
+                } else {
+                    cgmath::Quaternion::from_axis_angle(position.normalize(), cgmath::Deg(45.0))
+                };
 
-                    Instance { position, rotation }
-                })
+                Instance { position, rotation }
             })
             .collect::<Vec<_>>();
 
@@ -520,9 +512,9 @@ impl State {
         let camera = Camera {
             // position the camera one unit up and 2 units back
             // +z is out of the screen
-            eye: (0.0, 1.0, 2.0).into(),
+            eye: (0.0, 0.0, 0.0).into(),
             // have it look at the origin
-            target: (0.0, 0.0, 0.0).into(),
+            target: (0.0, 0.0, -1.0).into(),
             // which way is "up"
             up: cgmath::Vector3::unit_y(),
             aspect: config.width as f32 / config.height as f32,
@@ -685,15 +677,6 @@ impl State {
     }
 
     fn update(&mut self) {
-        // match self.system_time.elapsed() {
-        //     Ok(elapsed) => {
-        //         self.update_stars(elapsed);
-        //         self.instances.iter_mut().for_each(|i| i.update(elapsed));
-        //     }
-        //     Err(err) => {
-        //         println!("{}", err);
-        //     }
-        // }
         self.instances.iter_mut().for_each(|i| i.update());
         let instance_data = self
             .instances
@@ -793,7 +776,7 @@ pub async fn run() {
         // Winit prevents sizing with CSS, so we have to set
         // the size manually when on web.
         use winit::dpi::PhysicalSize;
-        window.set_inner_size(PhysicalSize::new(900, 700));
+        window.set_inner_size(PhysicalSize::new(1600, 1200));
 
         use winit::platform::web::WindowExtWebSys;
         web_sys::window()
